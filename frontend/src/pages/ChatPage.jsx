@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
 import ChatMessage from '@/components/chat/ChatMessage'
 import ChatInput from '@/components/chat/ChatInput'
 import ChatSuggestions from '@/components/chat/ChatSuggestions'
@@ -85,6 +86,8 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   )
 }

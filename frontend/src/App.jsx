@@ -6,11 +6,13 @@ import DashboardPage from './pages/DashboardPage'
 import ChatPage from './pages/ChatPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { isAuthenticated } from './services/authService'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen">
+    <ThemeProvider>
+      <Router>
+        <div className="min-h-screen">
         <Routes>
           {/* Root - redirect based on auth */}
           <Route 
@@ -52,6 +54,7 @@ function App() {
         <Toaster position="top-right" />
       </div>
     </Router>
+    </ThemeProvider>
   )
 }
 

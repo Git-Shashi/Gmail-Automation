@@ -25,10 +25,25 @@ export function getInitials(name) {
 }
 
 // Format email date
-export function formatEmailDate(dateStr) {
+export function formatEmailDate(dateStr, fullFormat = false) {
   if (!dateStr) return '';
   
   const date = new Date(dateStr);
+  
+  // Full format for email detail view
+  if (fullFormat) {
+    return date.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+  
+  // Compact format for email cards
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);

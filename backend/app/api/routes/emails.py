@@ -99,20 +99,27 @@ router = APIRouter(prefix="/emails", tags=["Emails"])
 @router.get("/recent", response_model=EmailListResponse)
 async def get_recent_emails(
     count: int = Query(default=5, ge=1, le=50),
+    with_summaries: bool = Query(default=False, description="Generate AI summaries (may hit rate limits)"),
     current_user: User = Depends(get_current_user)
 ):
-    """Fetch recent emails from inbox with AI summaries"""
+    """Fetch recent emails from inbox with optional AI summaries"""
     try:
         gmail_service = GmailService(current_user.access_token)
-        ai_service = AIService()
-        
         emails = await gmail_service.get_recent_emails(max_results=count)
         
-        for email in emails:
-            try:
-                summary = await ai_service.generate_email_summary(email)
-                email['summary'] = summary
-            except:
+        # Only generate summaries if explicitly requested
+        if with_summaries:
+            ai_service = AIService()
+            for email in emails:
+                try:
+                    summary = await ai_service.generate_email_summary(email)
+                    email['summary'] = summary
+                except Exception as e:
+                    # Fallback to snippet on any error (rate limit, etc.)
+                    email['summary'] = email.get('snippet', '')[:150]
+        else:
+            # Use email snippet as summary to avoid AI calls
+            for email in emails:
                 email['summary'] = email.get('snippet', '')[:150]
         
         return EmailListResponse(
@@ -186,19 +193,24 @@ async def delete_email(
 async def search_emails(
     query: str = Query(..., min_length=1),
     max_results: int = Query(default=10, ge=1, le=50),
+    with_summaries: bool = Query(default=False, description="Generate AI summaries (may hit rate limits)"),
     current_user: User = Depends(get_current_user)
 ):
     """Search emails using Gmail query syntax"""
     try:
         gmail_service = GmailService(current_user.access_token)
-        ai_service = AIService()
-        
         emails = await gmail_service.search_emails(query, max_results)
         
-        for email in emails:
-            try:
-                email['summary'] = await ai_service.generate_email_summary(email)
-            except:
+        # Only generate summaries if explicitly requested
+        if with_summaries:
+            ai_service = AIService()
+            for email in emails:
+                try:
+                    email['summary'] = await ai_service.generate_email_summary(email)
+                except Exception as e:
+                    email['summary'] = email.get('snippet', '')[:150]
+        else:
+            for email in emails:
                 email['summary'] = email.get('snippet', '')[:150]
         
         return EmailListResponse(

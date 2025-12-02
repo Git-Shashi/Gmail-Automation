@@ -20,12 +20,14 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { sendEmail } from '@/services/emailService'
-import { isValidEmail } from '@/lib/utils'
+import { isValidEmail, cn } from '@/lib/utils'
 import { useDispatch } from 'react-redux'
 import { sendEmail as sendEmailAction } from '@/store/slices/emailSlice'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export default function EmailComposer({ isOpen, onClose, onSuccess, defaultTo = '' }) {
   const dispatch = useDispatch()
+  const { config } = useTheme()
   const [to, setTo] = useState(defaultTo)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -66,7 +68,7 @@ export default function EmailComposer({ isOpen, onClose, onSuccess, defaultTo = 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={cn("sm:max-w-[600px]", config.modal, config.text)}>
         <DialogHeader>
           <DialogTitle>Compose Email</DialogTitle>
           <DialogDescription>

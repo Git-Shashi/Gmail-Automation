@@ -4,8 +4,10 @@ import { RefreshCw, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
 import EmailList from '@/components/email/EmailList'
 import EmailComposer from '@/components/email/EmailComposer'
+import EmailDetailModal from '@/components/email/EmailDetailModal'
 import EmailSearch from '@/components/email/EmailSearch'
 import ChatMessage from '@/components/chat/ChatMessage'
 import ChatInput from '@/components/chat/ChatInput'
@@ -16,10 +18,15 @@ import { sendMessage, addUserMessage } from '@/store/slices/chatSlice'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { useState } from 'react'
+import { useTheme } from '@/contexts/ThemeContext'
+import { cn } from '@/lib/utils'
 
 export default function DashboardPage() {
   const dispatch = useDispatch()
+  const { config } = useTheme()
   const [showComposer, setShowComposer] = useState(false)
+  const [showEmailDetail, setShowEmailDetail] = useState(false)
+  const [currentEmail, setCurrentEmail] = useState(null)
   
   // Redux state
   const { emails, loading, error, selectedEmail } = useSelector((state) => state.email)
@@ -75,7 +82,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <div className={cn("min-h-screen", config.bg, config.text)}>
       <Navbar />
       
       <div className="container mx-auto p-6 max-w-[1800px]">
@@ -111,6 +118,8 @@ export default function DashboardPage() {
                   const email = (emails || []).find(e => e?.id === id);
                   if (email) {
                     dispatch(selectEmail(email));
+                    setCurrentEmail(email);
+                    setShowEmailDetail(true);
                   }
                 }}
                 onEmailDelete={handleDeleteEmail}
@@ -164,6 +173,18 @@ export default function DashboardPage() {
         onClose={() => setShowComposer(false)}
         onSuccess={loadEmails}
       />
+
+      <EmailDetailModal
+        email={currentEmail}
+        isOpen={showEmailDetail}
+        onClose={() => {
+          setShowEmailDetail(false);
+          setCurrentEmail(null);
+        }}
+        onDelete={handleDeleteEmail}
+      />
+
+      <Footer />
     </div>
   )
 }

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import ThemeSwitcher from './ThemeSwitcher'
 
 export default function Navbar() {
   const location = useLocation()
@@ -65,7 +66,11 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* User Menu with Shadcn DropdownMenu */}
+        {/* Theme Switcher and User Menu */}
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher />
+          
+          {/* User Menu with Shadcn DropdownMenu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -98,6 +103,7 @@ export default function Navbar() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </nav>
   )

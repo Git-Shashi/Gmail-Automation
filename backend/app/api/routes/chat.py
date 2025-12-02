@@ -158,9 +158,9 @@ async def chat_message(
             count = params.get('count', 5)
             emails = await gmail_service.get_recent_emails(max_results=count)
             
-            # Generate summaries
+            # Use snippet as summary to avoid rate limits
             for email in emails:
-                email['summary'] = await ai_service.generate_email_summary(email)
+                email['summary'] = email.get('snippet', '')[:150]
             
             data = {"emails": [dict(e) for e in emails]}
             response_text = f"Here are your {len(emails)} most recent emails:"
@@ -171,8 +171,9 @@ async def chat_message(
                 response_text = "Please specify what to search for. Example: 'find emails from john@example.com'"
             else:
                 emails = await gmail_service.search_emails(query, max_results=10)
+                # Use snippet as summary to avoid rate limits
                 for email in emails:
-                    email['summary'] = await ai_service.generate_email_summary(email)
+                    email['summary'] = email.get('snippet', '')[:150]
                 
                 data = {"emails": [dict(e) for e in emails]}
                 response_text = f"Found {len(emails)} emails matching your search."

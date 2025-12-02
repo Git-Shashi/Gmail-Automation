@@ -14,7 +14,10 @@ This application provides an intelligent email assistant that:
 
 ## 🚀 Live Demo
 
-**Vercel URL:** https://your-app-name.vercel.app *(Add your deployed URL here)*
+**Frontend:** https://your-app.vercel.app *(Update after deployment)*  
+**Backend API:** https://your-backend.onrender.com *(Update after deployment)*
+
+> 📖 **See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions**
 
 ## 🛠️ Technologies Used
 
@@ -195,13 +198,29 @@ DEBUG=True
 
 ✅ Google OAuth 2.0 authentication  
 ✅ Gmail inbox integration  
-✅ AI-powered conversational assistant  
+✅ AI-powered conversational assistant (Google Gemini)  
 ✅ Context-aware email understanding  
-✅ Modern, responsive UI  
+✅ Modern, responsive UI with theme switcher (White/Charcoal/Night)  
 ✅ Real-time chat interface  
-✅ Email categorization  
+✅ Email detail modal with full email view  
+✅ Email categorization and search  
 ✅ Redux state management  
 ✅ MongoDB conversation storage  
+✅ Rate limit optimization (AI summaries optional)  
+
+## 🚢 Deployment
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete step-by-step deployment instructions to:
+- ✅ Vercel (Frontend)
+- ✅ Render.com/Railway (Backend)
+- ✅ MongoDB Atlas (Database - already configured)
+
+The deployment guide includes:
+- Platform-specific configurations
+- Environment variable setup
+- Google OAuth production setup
+- Troubleshooting tips
+- Cost optimization strategies
 
 ## 📄 License
 

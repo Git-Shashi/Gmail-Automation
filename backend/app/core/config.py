@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         """Convert comma-separated CORS_ORIGINS to list"""
+        # Allow all origins if CORS_ORIGINS is set to "*"
+        if self.CORS_ORIGINS.strip() == "*":
+            return ["*"]
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
     class Config:
