@@ -1,121 +1,58 @@
-/**
- * EmailSearch Component
- * 
- * Search bar for finding emails with Gmail search operators.
- * 
- * Purpose:
- * - Provide email search interface
- * - Support Gmail search syntax
- * - Show search suggestions
- * - Display search results
- * 
- * Layout:
- * ┌─────────────────────────────────────────┐
- * │ 🔍 [Search emails...           ] [🔍]  │
- * └─────────────────────────────────────────┘
- * 
- * With Suggestions Dropdown:
- * ┌─────────────────────────────────────────┐
- * │ 🔍 [from:john                  ] [🔍]  │
- * ├─────────────────────────────────────────┤
- * │ 💡 Suggestions:                         │
- * │ • from:john@example.com                 │
- * │ • from:johnson@company.com              │
- * │                                         │
- * │ 📝 Operators:                           │
- * │ • from:email - Filter by sender         │
- * │ • subject:"text" - Search subject       │
- * │ • has:attachment - Has files            │
- * └─────────────────────────────────────────┘
- * 
- * Features:
- * 
- * 1. Search Input:
- *    - Text input with icon
- *    - Placeholder: "Search emails..."
- *    - Auto-focus on mount
- *    - Clear button when text present
- * 
- * 2. Gmail Search Operators:
- *    - from:sender@email.com
- *    - to:recipient@email.com
- *    - subject:"keyword"
- *    - has:attachment
- *    - is:unread / is:read
- *    - is:starred
- *    - after:2024/12/01
- *    - before:2024/12/31
- *    - larger:5M / smaller:1M
- *    - in:inbox / in:sent
- * 
- * 3. Auto-Suggestions:
- *    - Detect operator being typed
- *    - Show relevant suggestions
- *    - Previous searches
- *    - Email addresses from contacts
- *    - Click to complete
- * 
- * 4. Operator Help:
- *    - Show helper popup
- *    - List available operators
- *    - Examples for each
- *    - Triggered by "?" or help icon
- * 
- * 5. Search Behavior:
- *    - Debounce input (300ms)
- *    - Search on Enter key
- *    - Search on button click
- *    - Show loading indicator
- *    - Clear previous results
- * 
- * 6. Search History:
- *    - Store last 10 searches
- *    - Show in dropdown
- *    - Click to re-run search
- *    - Clear history option
- * 
- * 7. Results Display:
- *    - Show "X results found"
- *    - Highlight search terms
- *    - "Clear search" to return to inbox
- * 
- * Search Flow:
- * 1. User types query
- * 2. Debounce 300ms
- * 3. Show suggestions if applicable
- * 4. User presses Enter or clicks search
- * 5. Call emailService.searchEmails(query)
- * 6. Pass results to parent via onResults
- * 7. Parent displays results in EmailList
- * 
- * Props:
- * - onSearch: function(query, results)
- * - placeholder: string
- * - defaultValue: string
- * - showOperators: boolean
- * 
- * States:
- * - query: string
- * - suggestions: array
- * - showSuggestions: boolean
- * - searching: boolean
- * - history: array
- * 
- * Example Queries:
- * - "from:john@example.com"
- * - "subject:invoice has:attachment"
- * - "is:unread after:2024/12/01"
- * - "larger:5M in:inbox"
- * 
- * Usage:
- * <EmailSearch
- *   onSearch={(query, results) => {
- *     setSearchQuery(query)
- *     setEmails(results)
- *   }}
- *   showOperators={true}
- * />
- */
+import { useState } from 'react'
+import { Search, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+
+export default function EmailSearch({ onSearch, placeholder = 'Search emails...' }) {
+  const [query, setQuery] = useState('')
+  
+  const handleSearch = () => {
+    if (query.trim()) {
+      onSearch?.(query)
+    }
+  }
+  
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+  
+  const handleClear = () => {
+    setQuery('')
+    onSearch?.('')
+  }
+  
+  return (
+    <div className="relative flex items-center gap-2">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder={placeholder}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="pl-10 pr-10"
+        />
+        {query && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            onClick={handleClear}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      <Button onClick={handleSearch} disabled={!query.trim()}>
+        <Search className="h-4 w-4 mr-2" />
+        Search
+      </Button>
+    </div>
+  )
+}
 
 // Will import Shadcn Input, Popover, Command
 // Will import Search, X icons from lucide-react

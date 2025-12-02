@@ -10,8 +10,8 @@
  * Base URL for backend API endpoints
  * Will use environment variable in production
  */
-// export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
-// export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_V1_URL = `${API_BASE_URL}/api/v1`;
 
 /**
  * Local Storage Keys
@@ -21,7 +21,12 @@
  * - THEME: User's theme preference (light/dark)
  * - LAST_SYNC: Timestamp of last email sync
  */
-// export const STORAGE_KEYS = { ... }
+export const STORAGE_KEYS = {
+  AUTH_TOKEN: 'gmail_auth_token',
+  USER_DATA: 'gmail_user',
+  THEME: 'gmail_theme',
+  LAST_SYNC: 'gmail_last_sync'
+}
 
 /**
  * Email Categories

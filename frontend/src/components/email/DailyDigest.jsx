@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { emailService } from '@/services/emailService'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchDailyDigest } from '@/store/slices/chatSlice'
 
 export default function DailyDigest() {
   // const [digest, setDigest] = useState(null)

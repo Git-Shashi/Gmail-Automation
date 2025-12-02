@@ -1,3 +1,7 @@
+import { Bot, User } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn, formatChatTime } from '@/lib/utils'
+
 /**
  * ChatMessage Component
  * 
@@ -114,19 +118,51 @@
  *    - Show "Copied!" feedback
  * 
  * Props:
- * - message: Message object
+ * - message: Message object with { role, content, timestamp }
  * - userAvatar: string (user's profile pic URL)
- * - isLatest: boolean (for animations)
- * 
- * Usage:
- * <ChatMessage
- *   message={messageData}
- *   userAvatar={user.picture}
- *   isLatest={index === messages.length - 1}
- * />
  */
 
-// Will import Avatar, Badge from Shadcn
-// Will import Bot, User, Check, X icons
-// Will conditionally render based on message.role
-// Will display email cards if message.data present
+export default function ChatMessage({ message, userAvatar }) {
+  const isUser = message.role === 'user'
+  const isAssistant = message.role === 'assistant'
+  
+  return (
+    <div className={cn(
+      "flex gap-3 mb-4",
+      isUser && "flex-row-reverse"
+    )}>
+      {/* Avatar */}
+      <Avatar className="h-8 w-8 flex-shrink-0">
+        {isUser ? (
+          <>
+            <AvatarImage src={userAvatar} />
+            <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+          </>
+        ) : (
+          <AvatarFallback className="bg-blue-500">
+            <Bot className="h-4 w-4 text-white" />
+          </AvatarFallback>
+        )}
+      </Avatar>
+      
+      {/* Message Content */}
+      <div className={cn(
+        "flex flex-col",
+        isUser ? "items-end" : "items-start",
+        "max-w-[80%]"
+      )}>
+        <div className={cn(
+          "rounded-lg px-4 py-2 break-words",
+          isUser ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
+        )}>
+          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        </div>
+        {message.timestamp && (
+          <span className="text-xs text-muted-foreground mt-1">
+            {formatChatTime(message.timestamp)}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}

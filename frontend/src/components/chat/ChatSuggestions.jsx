@@ -118,7 +118,45 @@
  * )}
  */
 
-// Will import Card, Button from Shadcn
-// Will import icons (Mail, Search, Trash) from lucide-react
-// Will render grid of suggestion cards
-// Will handle click to send suggestion
+import { Mail, Search, Trash2, Sparkles } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+
+const SUGGESTIONS = [
+  { id: 1, text: 'What emails do I have today?', icon: Mail, color: 'text-blue-600' },
+  { id: 2, text: 'Who sent me the most emails?', icon: Search, color: 'text-green-600' },
+  { id: 3, text: 'Are there any important emails?', icon: Sparkles, color: 'text-purple-600' },
+  { id: 4, text: 'Tell me about my recent emails', icon: Sparkles, color: 'text-orange-600' },
+]
+
+export default function ChatSuggestions({ onSelectSuggestion }) {
+  return (
+    <div className="space-y-4">
+      <div className="text-center space-y-2">
+        <div className="text-4xl mb-2">👋</div>
+        <h3 className="text-xl font-bold">Hi! I'm your AI Email Assistant</h3>
+        <p className="text-sm text-muted-foreground">I have access to your recent emails. Ask me anything!</p>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-3">
+        {SUGGESTIONS.map((suggestion) => {
+          const Icon = suggestion.icon
+          return (
+            <Card
+              key={suggestion.id}
+              className="p-4 cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] hover:border-primary bg-gradient-to-r from-card to-card/50"
+              onClick={() => onSelectSuggestion(suggestion.text)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Icon className={`h-5 w-5 ${suggestion.color}`} />
+                </div>
+                <p className="text-sm font-medium flex-1">{suggestion.text}</p>
+                <span className="text-xs text-muted-foreground">→</span>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

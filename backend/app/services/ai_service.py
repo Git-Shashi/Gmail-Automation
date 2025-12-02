@@ -81,15 +81,17 @@ class AIService:
     
     def __init__(self):
         """Initialize Gemini model"""
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        # Use gemini-2.5-flash (latest stable model with good performance)
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
     
-    async def parse_command(self, user_input: str, conversation_context: List[Dict] = None) -> Dict[str, Any]:
+    async def parse_command(self, user_input: str, conversation_context: List[Dict] = None, email_context: List[Dict] = None) -> Dict[str, Any]:
         """
         Parse natural language command to extract intent and parameters.
         
         Args:
             user_input: User's natural language command
             conversation_context: Previous conversation messages for context
+            email_context: Current user's emails for context-aware commands
         
         Returns:
             {
@@ -99,17 +101,27 @@ class AIService:
                 "response_text": "clarifying question or acknowledgment"
             }
         """
-        prompt = f"""You are an email assistant AI. Parse the user's command and extract the intent and parameters.
+        # Build context string with recent emails
+        context_info = ""
+        if email_context:
+            context_info = "\n\nUser's recent emails (you have access to these):\n"
+            for i, email in enumerate(email_context, 1):
+                context_info += f"{i}. From: {email.get('sender_name', 'Unknown')} ({email.get('sender_email', '')}), Subject: '{email.get('subject', 'No subject')}', Date: {email.get('date', '')}, ID: {email.get('id', '')}\n"
+        
+        prompt = f"""You are a helpful email assistant AI. The user is asking about their emails. Parse their request.
+{context_info}
 
-User command: "{user_input}"
+User: "{user_input}"
 
-Available actions:
-- "read": Fetch and show emails (params: count, filter)
-- "send": Send an email (params: to, subject, body)
-- "delete": Delete emails (params: email_id or search_criteria)
-- "search": Search for specific emails (params: query)
-- "summarize": Generate summary or digest
-- "chat": General conversation (no email action)
+If the user is asking conversational questions about emails (like "What emails do I have?", "Who sent me emails?", "Tell me about my inbox"), respond with action="chat" so you can have a natural conversation.
+
+Only use specific actions if they clearly want to perform an action:
+- "read": Only if they specifically say "show me", "fetch", "get my emails" with specific criteria
+- "send": Only if they want to send/compose an email
+- "delete": Only if they want to delete something
+- "search": Only if they want to search for specific emails
+- "summarize": Only if they explicitly ask for a summary or digest
+- "chat": For all conversational questions about emails (MOST COMMON - use this for questions!)
 
 Return a JSON object with:
 {{
@@ -300,13 +312,14 @@ Digest:"""
             return f"You have {len(emails)} emails. The most recent are from: " + \
                    ", ".join([e.get('sender_name', 'Unknown') for e in emails[:3]])
     
-    async def chat_response(self, user_message: str, conversation_history: List[Dict] = None) -> str:
+    async def chat_response(self, user_message: str, conversation_history: List[Dict] = None, email_context: List[Dict] = None) -> str:
         """
         Generate conversational response (non-command chat).
         
         Args:
             user_message: User's message
             conversation_history: Previous messages for context
+            email_context: Recent emails for context
         
         Returns:
             AI response
@@ -318,17 +331,28 @@ Digest:"""
                 content = msg.get('content', '')
                 context += f"{role}: {content}\n"
         
-        prompt = f"""You are a helpful email assistant. Have a natural conversation with the user.
-
+        # Add detailed email context
+        email_info = ""
+        if email_context:
+            email_info = f"\n\nUser's Inbox ({len(email_context)} recent emails):\n"
+            for i, email in enumerate(email_context, 1):
+                email_info += f"{i}. From: {email.get('sender_name', 'Unknown')} ({email.get('sender_email', '')}), Subject: '{email.get('subject', 'No subject')}', Date: {email.get('date', '')}\n"
+        
+        prompt = f"""You are a friendly and helpful email assistant AI. Have a natural, conversational chat with the user about their emails.
+{email_info}
 {context}
-user: {user_message}
+User: {user_message}
 
-Respond naturally and helpfully. If they seem to want email help, gently guide them with examples like:
-- "Show me my last 5 emails"
-- "Delete emails from someone@example.com"
-- "Send an email to..."
+Respond naturally and helpfully. Analyze the emails shown above to answer their questions. You can:
+- Tell them what emails they have
+- Summarize who sent them emails
+- Identify important emails
+- Answer questions about their inbox
+- Provide insights about their email patterns
 
-assistant:"""
+Be conversational, friendly, and specific. Reference actual emails when answering. Keep responses concise (2-4 sentences).
+
+Assistant:"""
 
         try:
             response = self.model.generate_content(prompt)

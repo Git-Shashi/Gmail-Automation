@@ -5,9 +5,10 @@
  * Features: Logo, navigation links, user dropdown menu
  */
 
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Mail, LogOut, User, Settings } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { useDispatch, useSelector } from 'react-redux'
+import { logoutUser } from '@/store/slices/authSlice'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -21,22 +22,29 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export default function Navbar() {
-  // const location = useLocation()
-  // const { user, logout } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const { user } = useSelector((state) => state.auth)
 
-  // const isActive = (path) => location.pathname === path
+  const isActive = (path) => location.pathname === path
+  
+  const handleLogout = async () => {
+    await dispatch(logoutUser())
+    navigate('/login')
+  }
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo and Brand */}
-        {/* <Link to="/dashboard" className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <Mail className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold">Gmail AI</span>
-        </Link> */}
+        </Link>
 
         {/* Navigation Links */}
-        {/* <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6">
           <Link
             to="/dashboard"
             className={cn(
@@ -55,15 +63,15 @@ export default function Navbar() {
           >
             Chat
           </Link>
-        </div> */}
+        </div>
 
         {/* User Menu with Shadcn DropdownMenu */}
-        {/* <DropdownMenu>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar>
                 <AvatarImage src={user?.picture} alt={user?.name} />
-                <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -84,12 +92,12 @@ export default function Navbar() {
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-destructive">
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu> */}
+        </DropdownMenu>
       </div>
     </nav>
   )

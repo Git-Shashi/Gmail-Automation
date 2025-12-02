@@ -105,7 +105,46 @@
  * />
  */
 
-// Will import Textarea, Button from Shadcn
-// Will import Send icon from lucide-react
-// Will handle Enter key press
-// Will auto-resize textarea
+import { useState } from 'react'
+import { Send } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+
+export default function ChatInput({ onSend, disabled = false, placeholder = 'Type a command or question...' }) {
+  const [message, setMessage] = useState('')
+  
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message.trim())
+      setMessage('')
+    }
+  }
+  
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+  
+  return (
+    <div className="flex gap-2 items-end">
+      <Textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="min-h-[80px] max-h-[200px] resize-none"
+      />
+      <Button
+        onClick={handleSend}
+        disabled={disabled || !message.trim()}
+        size="icon"
+        className="h-[80px] w-12 flex-shrink-0"
+      >
+        <Send className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+}

@@ -142,8 +142,11 @@ async def chat_message(
         if conversation:
             history = conversation.get('messages', [])
         
-        # Parse command
-        parsed = await ai_service.parse_command(request.message, history)
+        # Fetch recent emails for context-aware AI
+        recent_emails = await gmail_service.get_recent_emails(max_results=10)
+        
+        # Parse command with email context
+        parsed = await ai_service.parse_command(request.message, history, recent_emails)
         action = parsed.get('action', 'chat')
         params = parsed.get('parameters', {})
         
@@ -207,7 +210,7 @@ async def chat_message(
             data = {"email_count": len(emails)}
         
         else:  # CHAT
-            response_text = await ai_service.chat_response(request.message, history)
+            response_text = await ai_service.chat_response(request.message, history, recent_emails)
         
         # Store conversation
         message = Message(
