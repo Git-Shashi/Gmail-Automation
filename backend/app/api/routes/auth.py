@@ -55,7 +55,127 @@ OAuth Flow:
 12. Frontend uses JWT for API calls
 """
 
-# Will use APIRouter with prefix /auth
-# Will import auth_service for OAuth logic
-# Will use dependencies for auth checking
-# Will handle redirects properly
+from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.responses import RedirectResponse
+from app.services.auth_service import get_authorization_url, handle_oauth_callback
+from app.schemas.auth import AuthorizationUrlResponse, LoginResponse, UserProfile
+from app.api.dependencies import get_current_user
+from app.models.user import User
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.get("/login", response_model=AuthorizationUrlResponse)
+async def login():
+    """
+    Get Google OAuth authorization URL.
+    
+    Frontend redirects user to this URL to start OAuth flow.
+    
+    Returns:
+        Authorization URL for Google consent screen
+        
+    Example:
+        GET /api/v1/auth/login
+        Response: {
+            "authorization_url": "https://accounts.google.com/o/oauth2/auth?..."
+        }
+    """
+    try:
+        authorization_url = get_authorization_url()
+        return {"authorization_url": authorization_url}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate authorization URL: {str(e)}"
+        )
+
+
+@router.get("/callback")
+async def oauth_callback(code: str):
+    """
+    Handle OAuth callback from Google.
+    
+    This endpoint receives the authorization code from Google after user authorizes.
+    It exchanges the code for tokens, creates/updates user, and redirects to frontend.
+    
+    Args:
+        code: Authorization code from Google redirect
+    
+    Returns:
+        Redirect to frontend with JWT token
+        
+    Example:
+        Google redirects to: /api/v1/auth/callback?code=4/0AQlEd8...
+        Backend redirects to: http://localhost:5173/auth/callback?token=eyJhbGc...
+    """
+    try:
+        # Exchange code for tokens and get user
+        result = await handle_oauth_callback(code)
+        
+        # Redirect to frontend with JWT token
+        frontend_url = f"http://localhost:5173/auth/callback?token={result['jwt_token']}"
+        return RedirectResponse(url=frontend_url)
+        
+    except Exception as e:
+        # Redirect to frontend with error
+        error_url = f"http://localhost:5173/auth/callback?error={str(e)}"
+        return RedirectResponse(url=error_url)
+
+
+@router.get("/me", response_model=UserProfile)
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """
+    Get current authenticated user's information.
+    
+    Requires valid JWT token in Authorization header.
+    
+    Args:
+        current_user: Authenticated user from dependency
+    
+    Returns:
+        User profile information
+        
+    Example:
+        GET /api/v1/auth/me
+        Authorization: Bearer eyJhbGc...
+        Response: {
+            "id": "507f1f77bcf86cd799439011",
+            "email": "user@example.com",
+            "name": "John Doe",
+            "picture": "https://..."
+        }
+    """
+    return UserProfile(
+        id=str(current_user.id),
+        email=current_user.email,
+        name=current_user.name,
+        picture=current_user.picture
+    )
+
+
+@router.post("/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    """
+    Logout current user.
+    
+    In a stateless JWT system, logout is handled client-side by removing the token.
+    This endpoint is provided for consistency and could be extended to:
+    - Revoke Google OAuth tokens
+    - Blacklist JWT tokens
+    - Clear server-side sessions
+    
+    Args:
+        current_user: Authenticated user from dependency
+    
+    Returns:
+        Success message
+        
+    Example:
+        POST /api/v1/auth/logout
+        Authorization: Bearer eyJhbGc...
+        Response: {"message": "Logged out successfully"}
+    """
+    # In future, could revoke Google tokens here
+    # For now, client handles logout by removing JWT
+    return {"message": "Logged out successfully"}

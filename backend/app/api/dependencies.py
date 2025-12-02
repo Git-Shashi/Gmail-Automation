@@ -49,7 +49,60 @@ Error Handling:
 - 500 Internal: Database connection error
 """
 
-# Will use HTTPBearer for token extraction
-# Will verify JWT using jose library
-# Will implement token refresh logic
-# Will cache service instances per request
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.core.security import verify_token
+from app.services.auth_service import get_user_by_id
+from app.models.user import User
+
+# Bearer token security scheme
+security = HTTPBearer()
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> User:
+    """
+    Authentication dependency for protected routes.
+    
+    Extracts and validates JWT token from Authorization header.
+    Returns authenticated user object.
+    
+    Usage:
+        @app.get("/protected")
+        async def protected_route(user: User = Depends(get_current_user)):
+            return {"message": f"Hello {user.name}"}
+    
+    Args:
+        credentials: Bearer token from Authorization header
+    
+    Returns:
+        User object from MongoDB
+        
+    Raises:
+        HTTPException 401: If token is invalid or user not found
+    """
+    token = credentials.credentials
+    
+    try:
+        # Verify JWT token and extract payload
+        payload = verify_token(token)
+        user_id: str = payload.get("sub")
+        
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Fetch user from database
+        user = await get_user_by_id(user_id)
+        return user
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not validate credentials: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

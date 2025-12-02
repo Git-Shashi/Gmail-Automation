@@ -94,7 +94,230 @@ Error Handling:
 - API errors: User-friendly messages
 """
 
-# Will use APIRouter with prefix /chat
-# Will inject AIService and GmailService
-# Will store conversations in MongoDB
-# Will handle command parsing and execution
+from fastapi import APIRouter, HTTPException, status, Depends
+from app.schemas.chat import (
+    ChatRequest, ChatResponse, GenerateReplyRequest, 
+    GenerateReplyResponse, DigestResponse, ActionType
+)
+from app.schemas.email import EmailResponse
+from app.services.ai_service import AIService
+from app.services.gmail_service import GmailService
+from app.api.dependencies import get_current_user
+from app.models.user import User
+from app.models.conversation import Conversation, Message
+from app.core.database import get_database
+from typing import List, Optional
+from datetime import datetime
+from bson import ObjectId
+
+router = APIRouter(prefix="/chat", tags=["Chat"])
+
+
+@router.post("/message", response_model=ChatResponse)
+async def chat_message(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_database)
+):
+    """
+    Send message to AI assistant.
+    
+    Handles natural language commands to read, send, delete emails.
+    """
+    try:
+        ai_service = AIService()
+        gmail_service = GmailService(current_user.access_token)
+        
+        # Get conversation history for context
+        conversations_collection = db.conversations
+        conversation = None
+        
+        if request.conversation_id:
+            conversation = await conversations_collection.find_one({
+                "_id": ObjectId(request.conversation_id),
+                "user_id": str(current_user.id)
+            })
+        
+        history = []
+        if conversation:
+            history = conversation.get('messages', [])
+        
+        # Parse command
+        parsed = await ai_service.parse_command(request.message, history)
+        action = parsed.get('action', 'chat')
+        params = parsed.get('parameters', {})
+        
+        response_text = ""
+        data = None
+        
+        # Execute action based on parsed command
+        if action == ActionType.READ:
+            count = params.get('count', 5)
+            emails = await gmail_service.get_recent_emails(max_results=count)
+            
+            # Generate summaries
+            for email in emails:
+                email['summary'] = await ai_service.generate_email_summary(email)
+            
+            data = {"emails": [dict(e) for e in emails]}
+            response_text = f"Here are your {len(emails)} most recent emails:"
+        
+        elif action == ActionType.SEARCH:
+            query = params.get('query', params.get('from', ''))
+            if not query:
+                response_text = "Please specify what to search for. Example: 'find emails from john@example.com'"
+            else:
+                emails = await gmail_service.search_emails(query, max_results=10)
+                for email in emails:
+                    email['summary'] = await ai_service.generate_email_summary(email)
+                
+                data = {"emails": [dict(e) for e in emails]}
+                response_text = f"Found {len(emails)} emails matching your search."
+        
+        elif action == ActionType.DELETE:
+            email_id = params.get('email_id')
+            if not email_id:
+                response_text = "Please specify which email to delete. Try: 'delete email ID abc123' or 'delete the first email'"
+            else:
+                success = await gmail_service.delete_email(email_id)
+                if success:
+                    response_text = f"Email deleted successfully."
+                else:
+                    response_text = f"Couldn't delete that email. It may not exist."
+        
+        elif action == ActionType.SEND:
+            to = params.get('to')
+            subject = params.get('subject', 'Message from Gmail Assistant')
+            body = params.get('body', '')
+            
+            if not to:
+                response_text = "Please specify the recipient email address."
+            elif not body:
+                response_text = "Please tell me what you'd like to say in the email."
+            else:
+                result = await gmail_service.send_email(to, subject, body)
+                response_text = f"Email sent successfully to {to}!"
+                data = {"email_id": result['id']}
+        
+        elif action == ActionType.SUMMARIZE:
+            count = params.get('count', 10)
+            emails = await gmail_service.get_recent_emails(max_results=count)
+            digest = await ai_service.generate_digest(emails)
+            response_text = digest
+            data = {"email_count": len(emails)}
+        
+        else:  # CHAT
+            response_text = await ai_service.chat_response(request.message, history)
+        
+        # Store conversation
+        message = Message(
+            role="user",
+            content=request.message,
+            timestamp=datetime.utcnow(),
+            action=action if action != ActionType.CHAT else None
+        )
+        
+        ai_message = Message(
+            role="assistant",
+            content=response_text,
+            timestamp=datetime.utcnow()
+        )
+        
+        if conversation:
+            await conversations_collection.update_one(
+                {"_id": ObjectId(request.conversation_id)},
+                {
+                    "$push": {"messages": {"$each": [message.dict(), ai_message.dict()]}},
+                    "$set": {"updated_at": datetime.utcnow()}
+                }
+            )
+        else:
+            new_conversation = Conversation(
+                user_id=str(current_user.id),
+                messages=[message, ai_message]
+            )
+            result = await conversations_collection.insert_one(new_conversation.dict())
+            request.conversation_id = str(result.inserted_id)
+        
+        return ChatResponse(
+            response=response_text,
+            action=action if action != ActionType.CHAT else None,
+            data=data,
+            confidence=parsed.get('confidence'),
+            metadata={"conversation_id": request.conversation_id}
+        )
+        
+    except Exception as e:
+        print(f"Chat error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Chat failed: {str(e)}"
+        )
+
+
+@router.post("/generate-reply", response_model=GenerateReplyResponse)
+async def generate_reply(
+    request: GenerateReplyRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Generate AI reply for a specific email"""
+    try:
+        ai_service = AIService()
+        gmail_service = GmailService(current_user.access_token)
+        
+        # Get original email
+        email = await gmail_service.get_email_by_id(request.email_id)
+        
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Email not found"
+            )
+        
+        # Generate reply
+        reply_body = await ai_service.generate_reply(email, request.instructions)
+        
+        return GenerateReplyResponse(
+            suggested_reply=reply_body,
+            to=email['sender_email'],
+            subject=f"Re: {email['subject']}",
+            email_id=request.email_id
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate reply: {str(e)}"
+        )
+
+
+@router.get("/digest", response_model=DigestResponse)
+async def get_daily_digest(
+    count: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Get AI-generated daily email digest"""
+    try:
+        ai_service = AIService()
+        gmail_service = GmailService(current_user.access_token)
+        
+        emails = await gmail_service.get_recent_emails(max_results=count)
+        
+        digest_text = await ai_service.generate_digest(emails)
+        categories = await ai_service.categorize_emails(emails)
+        
+        category_counts = {cat: len(emails_list) for cat, emails_list in categories.items()}
+        
+        return DigestResponse(
+            digest=digest_text,
+            email_count=len(emails),
+            categories=category_counts
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate digest: {str(e)}"
+        )

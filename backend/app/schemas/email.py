@@ -40,6 +40,60 @@ Usage:
 - Enables email search with filters
 """
 
-# Will use EmailStr for email validation
-# Will include examples in Field() for docs
-# Will handle optional fields properly
+from pydantic import BaseModel, EmailStr, Field
+from typing import List, Optional
+from datetime import datetime
+
+
+class EmailResponse(BaseModel):
+    """Email data response"""
+    id: str
+    thread_id: Optional[str] = None
+    subject: str
+    sender_name: str
+    sender_email: str
+    from_field: str = Field(alias="from")
+    to: Optional[str] = None
+    date: Optional[str] = None
+    snippet: str
+    body: str
+    labels: List[str] = []
+    summary: Optional[str] = None  # AI-generated summary
+    
+    class Config:
+        populate_by_name = True
+
+
+class SendEmailRequest(BaseModel):
+    """Request to send an email"""
+    to: EmailStr
+    subject: str = Field(..., min_length=1)
+    body: str = Field(..., min_length=1)
+    in_reply_to: Optional[str] = None  # For threading
+
+
+class SendEmailResponse(BaseModel):
+    """Response after sending email"""
+    id: str
+    thread_id: Optional[str] = None
+    status: str
+    message: str
+
+
+class DeleteEmailRequest(BaseModel):
+    """Request to delete email(s)"""
+    email_id: Optional[str] = None
+    search_query: Optional[str] = None
+
+
+class SearchEmailRequest(BaseModel):
+    """Request to search emails"""
+    query: str = Field(..., min_length=1)
+    max_results: int = Field(default=10, ge=1, le=50)
+
+
+class EmailListResponse(BaseModel):
+    """List of emails with metadata"""
+    emails: List[EmailResponse]
+    total: int
+    message: Optional[str] = None

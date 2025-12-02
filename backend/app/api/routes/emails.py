@@ -82,7 +82,132 @@ Rate Limiting:
 - Cache frequently accessed emails
 """
 
-# Will use APIRouter with prefix /emails
-# Will inject GmailService via dependencies
-# Will inject AIService for categorization
-# Will validate all inputs with Pydantic
+from fastapi import APIRouter, HTTPException, status, Depends, Query
+from app.schemas.email import (
+    EmailResponse, EmailListResponse, SendEmailRequest, 
+    SendEmailResponse, DeleteEmailRequest, SearchEmailRequest
+)
+from app.services.gmail_service import GmailService
+from app.services.ai_service import AIService
+from app.api.dependencies import get_current_user
+from app.models.user import User
+from typing import List, Optional
+
+router = APIRouter(prefix="/emails", tags=["Emails"])
+
+
+@router.get("/recent", response_model=EmailListResponse)
+async def get_recent_emails(
+    count: int = Query(default=5, ge=1, le=50),
+    current_user: User = Depends(get_current_user)
+):
+    """Fetch recent emails from inbox with AI summaries"""
+    try:
+        gmail_service = GmailService(current_user.access_token)
+        ai_service = AIService()
+        
+        emails = await gmail_service.get_recent_emails(max_results=count)
+        
+        for email in emails:
+            try:
+                summary = await ai_service.generate_email_summary(email)
+                email['summary'] = summary
+            except:
+                email['summary'] = email.get('snippet', '')[:150]
+        
+        return EmailListResponse(
+            emails=[EmailResponse(**email) for email in emails],
+            total=len(emails),
+            message=f"Fetched {len(emails)} recent emails"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch emails: {str(e)}"
+        )
+
+
+@router.post("/send", response_model=SendEmailResponse)
+async def send_email(
+    request: SendEmailRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Send an email via Gmail"""
+    try:
+        gmail_service = GmailService(current_user.access_token)
+        
+        result = await gmail_service.send_email(
+            to=request.to,
+            subject=request.subject,
+            body=request.body,
+            in_reply_to=request.in_reply_to
+        )
+        
+        return SendEmailResponse(
+            id=result['id'],
+            thread_id=result.get('thread_id'),
+            status="sent",
+            message=f"Email sent successfully to {request.to}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send email: {str(e)}"
+        )
+
+
+@router.delete("/{email_id}")
+async def delete_email(
+    email_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete/trash an email"""
+    try:
+        gmail_service = GmailService(current_user.access_token)
+        success = await gmail_service.delete_email(email_id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Email {email_id} not found"
+            )
+        
+        return {"success": True, "message": f"Email deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete email: {str(e)}"
+        )
+
+
+@router.get("/search/query", response_model=EmailListResponse)
+async def search_emails(
+    query: str = Query(..., min_length=1),
+    max_results: int = Query(default=10, ge=1, le=50),
+    current_user: User = Depends(get_current_user)
+):
+    """Search emails using Gmail query syntax"""
+    try:
+        gmail_service = GmailService(current_user.access_token)
+        ai_service = AIService()
+        
+        emails = await gmail_service.search_emails(query, max_results)
+        
+        for email in emails:
+            try:
+                email['summary'] = await ai_service.generate_email_summary(email)
+            except:
+                email['summary'] = email.get('snippet', '')[:150]
+        
+        return EmailListResponse(
+            emails=[EmailResponse(**email) for email in emails],
+            total=len(emails),
+            message=f"Found {len(emails)} emails"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search failed: {str(e)}"
+        )
