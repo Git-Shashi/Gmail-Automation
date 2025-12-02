@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --radius: 0.625rem;
+
+  /* Neutral BASE COLORS */
+  --background: var(--neutral-50);
+  --foreground: var(--neutral-900);
+
+  --card: var(--neutral-50);
+  --card-foreground: var(--neutral-900);
+
+  --popover: var(--neutral-50);
+  --popover-foreground: var(--neutral-900);
+
+  --primary: var(--neutral-900);
+  --primary-foreground: var(--neutral-50);
+
+  --secondary: var(--neutral-200);
+  --secondary-foreground: var(--neutral-900);
+
+  --muted: var(--neutral-200);
+  --muted-foreground: var(--neutral-600);
+
+  --accent: var(--neutral-200);
+  --accent-foreground: var(--neutral-900);
+
+  --destructive: var(--neutral-700);
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--neutral-400);
+
+  /* Charts (neutralized) */
+  --chart-1: var(--neutral-700);
+  --chart-2: var(--neutral-500);
+  --chart-3: var(--neutral-400);
+  --chart-4: var(--neutral-600);
+  --chart-5: var(--neutral-300);
+
+  /* Sidebar */
+  --sidebar: var(--neutral-100);
+  --sidebar-foreground: var(--neutral-900);
+  --sidebar-primary: var(--neutral-900);
+  --sidebar-primary-foreground: var(--neutral-50);
+  --sidebar-accent: var(--neutral-200);
+  --sidebar-accent-foreground: var(--neutral-900);
+  --sidebar-border: var(--neutral-200);
+  --sidebar-ring: var(--neutral-400);
+}
+
+/* DARK MODE (neutral palette) */
+.dark {
+  --background: var(--neutral-900);
+  --foreground: var(--neutral-50);
+
+  --card: var(--neutral-900);
+  --card-foreground: var(--neutral-50);
+
+  --popover: var(--neutral-900);
+  --popover-foreground: var(--neutral-50);
+
+  --primary: var(--neutral-50);
+  --primary-foreground: var(--neutral-900);
+
+  --secondary: var(--neutral-800);
+  --secondary-foreground: var(--neutral-50);
+
+  --muted: var(--neutral-800);
+  --muted-foreground: var(--neutral-400);
+
+  --accent: var(--neutral-800);
+  --accent-foreground: var(--neutral-50);
+
+  --destructive: var(--neutral-600);
+  --border: var(--neutral-700);
+  --input: var(--neutral-700);
+  --ring: var(--neutral-500);
+
+  /* neutral charts for dark */
+  --chart-1: var(--neutral-300);
+  --chart-2: var(--neutral-400);
+  --chart-3: var(--neutral-500);
+  --chart-4: var(--neutral-200);
+  --chart-5: var(--neutral-600);
+
+  /* Sidebar */
+  --sidebar: var(--neutral-950);
+  --sidebar-foreground: var(--neutral-50);
+  --sidebar-primary: var(--neutral-300);
+  --sidebar-primary-foreground: var(--neutral-900);
+  --sidebar-accent: var(--neutral-800);
+  --sidebar-accent-foreground: var(--neutral-50);
+  --sidebar-border: var(--neutral-700);
+  --sidebar-ring: var(--neutral-400);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
