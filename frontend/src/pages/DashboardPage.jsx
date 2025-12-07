@@ -82,13 +82,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={cn("min-h-screen", config.bg, config.text)}>
+    <div className={cn("min-h-screen flex flex-col", config.bg, config.text)}>
       <Navbar />
       
-      <div className="container mx-auto p-6 max-w-[1800px]">
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 h-[calc(100vh-7rem)]">
+      <div className="container mx-auto px-6 py-6 max-w-[1800px]" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 h-full">
           {/* Left Column: Email List */}
-          <div className="xl:col-span-3 flex flex-col space-y-3">
+          <div className="xl:col-span-3 flex flex-col space-y-3 h-full">
             <div className="flex items-center justify-between bg-card/50 backdrop-blur-sm p-4 rounded-xl border shadow-sm">
               <div>
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Inbox</h2>
@@ -129,8 +129,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Column: Chat */}
-          <div className="xl:col-span-2 flex flex-col space-y-3 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm rounded-xl border shadow-lg p-5">
-            <div className="flex items-center gap-3">
+          <div className="xl:col-span-2 flex flex-col bg-gradient-to-br from-card to-card/50 backdrop-blur-sm rounded-xl border shadow-lg h-full">
+            {/* Header - Fixed */}
+            <div className="flex items-center gap-3 p-4 flex-shrink-0 border-b bg-card/50">
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                 <span className="text-white text-lg">🤖</span>
               </div>
@@ -139,13 +140,13 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground">Ask me anything about your emails</p>
               </div>
             </div>
-            <Separator className="my-2" />
             
-            <ScrollArea className="flex-1 pr-3">
+            {/* Messages - Scrollable */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
               {messages.length === 0 ? (
                 <ChatSuggestions onSelectSuggestion={handleSuggestionClick} />
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 pb-2">
                   {messages.map((msg, idx) => (
                     <ChatMessage
                       key={idx}
@@ -156,12 +157,14 @@ export default function DashboardPage() {
                   {chatLoading && <TypingIndicator />}
                 </div>
               )}
-            </ScrollArea>
+            </div>
             
-            <div className="pt-3 border-t">
+            {/* Input - Fixed at Bottom of Chat Section */}
+            <div className="p-3 border-t flex-shrink-0 bg-card">
               <ChatInput
                 onSend={handleSendChatMessage}
                 disabled={chatLoading}
+                placeholder="Ask about your emails..."
               />
             </div>
           </div>
@@ -183,8 +186,6 @@ export default function DashboardPage() {
         }}
         onDelete={handleDeleteEmail}
       />
-
-      <Footer />
     </div>
   )
 }

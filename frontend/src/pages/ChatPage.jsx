@@ -49,19 +49,19 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <div className="container mx-auto p-4 max-w-4xl">
-        <div className="flex flex-col h-[calc(100vh-8rem)] border rounded-lg bg-card">
-          <div className="p-4 border-b">
+      <div className="flex-1 container mx-auto p-4 max-w-4xl pb-8">
+        <div className="flex flex-col h-full border rounded-lg bg-card">
+          <div className="p-4 border-b flex-shrink-0">
             <h1 className="text-2xl font-bold">Chat with AI Assistant</h1>
             <p className="text-sm text-muted-foreground">
               Ask questions about your emails or give commands
             </p>
           </div>
           
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4 overflow-y-auto">
             {messages.length === 0 ? (
               <ChatSuggestions onSelectSuggestion={handleSuggestionClick} />
             ) : (
@@ -78,7 +78,7 @@ export default function ChatPage() {
             )}
           </ScrollArea>
           
-          <div className="p-4 border-t">
+          <div className="p-4 border-t flex-shrink-0">
             <ChatInput
               onSend={handleSendMessage}
               disabled={loading}

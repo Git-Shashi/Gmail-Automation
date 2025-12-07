@@ -128,20 +128,22 @@ export default function ChatInput({ onSend, disabled = false, placeholder = 'Typ
   }
   
   return (
-    <div className="flex gap-2 items-end">
+    <div className="flex gap-2 items-end w-full">
       <Textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        className="min-h-[80px] max-h-[200px] resize-none"
+        className="min-h-[60px] max-h-[120px] resize-none flex-1"
+        rows={2}
       />
       <Button
         onClick={handleSend}
         disabled={disabled || !message.trim()}
         size="icon"
-        className="h-[80px] w-12 flex-shrink-0"
+        className="h-[60px] w-12 flex-shrink-0"
+        title="Send message (Enter)"
       >
         <Send className="h-4 w-4" />
       </Button>

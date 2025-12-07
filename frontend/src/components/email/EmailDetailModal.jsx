@@ -101,14 +101,18 @@ export default function EmailDetailModal({ email, isOpen, onClose, onDelete }) {
           )}
 
           {/* Email Body */}
-          <div className="prose prose-sm dark:prose-invert max-w-none">
+          <div className="prose prose-sm dark:prose-invert max-w-none mb-6">
             {email.body ? (
-              <div 
-                className="text-sm leading-relaxed whitespace-pre-wrap"
-                dangerouslySetInnerHTML={{ __html: email.body }}
-              />
+              <div className="text-sm leading-relaxed">
+                {/* Check if body contains HTML tags */}
+                {email.body.includes('<') && email.body.includes('>') ? (
+                  <div dangerouslySetInnerHTML={{ __html: email.body }} />
+                ) : (
+                  <div className="whitespace-pre-wrap">{email.body}</div>
+                )}
+              </div>
             ) : (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {email.snippet || 'No content available'}
               </div>
             )}
