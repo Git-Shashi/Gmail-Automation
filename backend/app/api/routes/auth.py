@@ -61,6 +61,7 @@ from app.services.auth_service import get_authorization_url, handle_oauth_callba
 from app.schemas.auth import AuthorizationUrlResponse, LoginResponse, UserProfile
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -114,12 +115,12 @@ async def oauth_callback(code: str):
         result = await handle_oauth_callback(code)
         
         # Redirect to frontend with JWT token
-        frontend_url = f"http://localhost:5173/auth/callback?token={result['jwt_token']}"
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback?token={result['jwt_token']}"
         return RedirectResponse(url=frontend_url)
         
     except Exception as e:
         # Redirect to frontend with error
-        error_url = f"http://localhost:5173/auth/callback?error={str(e)}"
+        error_url = f"{settings.FRONTEND_URL}/auth/callback?error={str(e)}"
         return RedirectResponse(url=error_url)
 
 
